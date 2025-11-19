@@ -23,7 +23,8 @@ const buildConnectionString = () => {
     process.exit(1);
   }
 
-  return `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=${DB_SSL === "true" ? "require" : "disable"}`;
+  const sslMode = DB_SSL === "true" ? "no-verify" : "disable";
+  return `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=${sslMode}`;
 };
 
 const pool = new Pool({
