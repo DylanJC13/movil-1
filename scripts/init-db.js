@@ -1,15 +1,28 @@
 require("dotenv").config();
 const { Pool } = require("pg");
 
-const connectionString = process.env.DATABASE_URL;
+const buildConnectionString = () => {
+  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
 
-if (!connectionString) {
-  console.error("DATABASE_URL no está definido. Crea un .env basado en .env.example");
-  process.exit(1);
-}
+  const {
+    DB_HOST,
+    DB_PORT,
+    DB_DATABASE,
+    DB_USER,
+    DB_PASSWORD,
+    DB_SSL = "true"
+  } = process.env;
+
+  if (!DB_HOST || !DB_PORT || !DB_DATABASE || !DB_USER || !DB_PASSWORD) {
+    console.error("Variables DB_* incompletas. Revisa .env.example");
+    process.exit(1);
+  }
+
+  return `postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=${DB_SSL === "true" ? "require" : "disable"}`;
+};
 
 const pool = new Pool({
-  connectionString,
+  connectionString: buildConnectionString(),
   ssl: { rejectUnauthorized: false }
 });
 

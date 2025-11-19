@@ -27,8 +27,7 @@ npm run web          # versión web
 1. Copia el entorno y rellena la URL de la base (no subas tu `.env` al repo):
    ```bash
    cp .env.example .env
-   # edita DATABASE_URL con tu contraseña real:
-   # postgresql://doadmin:<PASSWORD>@movil-2-do-user-28304087-0.i.db.ondigitalocean.com:25060/defaultdb?sslmode=require
+   # ajusta DB_PASSWORD con tu contraseña real (el resto ya está en el ejemplo)
    ```
 2. Crear tabla y datos seed:
    ```bash
