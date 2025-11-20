@@ -27,14 +27,21 @@ export function MasterPage() {
   return (
     <main className="page" style={{ alignItems: "flex-start" }}>
       <section style={{ width: "min(100%, 960px)", margin: "0 auto" }}>
-        <header style={{ marginBottom: "1.5rem" }}>
-          <Link to="/" style={{ color: "#38bdf8", fontSize: 14 }}>
-            ← Volver
-          </Link>
-          <h1 style={{ margin: "0.5rem 0 0", color: "#f8fafc" }}>Catálogo maestro</h1>
-          <p style={{ color: "#cbd5f5" }}>
-            Lista dinámica conectada a PostgreSQL. Toca un producto para ver su detalle.
-          </p>
+        <header style={{ marginBottom: "1.5rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+            <Link to="/" style={{ color: "#38bdf8", fontSize: 14 }}>
+              ← Volver
+            </Link>
+            <Link to="/catalog/new" className="primary-btn" style={{ padding: "0.6rem 1rem" }}>
+              + Nuevo producto
+            </Link>
+          </div>
+          <div>
+            <h1 style={{ margin: "0.5rem 0 0", color: "#f8fafc" }}>Catálogo maestro</h1>
+            <p style={{ color: "#cbd5f5" }}>
+              Lista dinámica conectada a PostgreSQL. Toca un producto para ver su detalle o agrega nuevos registros.
+            </p>
+          </div>
         </header>
 
         <div

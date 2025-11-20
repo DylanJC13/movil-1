@@ -24,3 +24,18 @@ export async function fetchProduct(id) {
   }
   return res.json();
 }
+
+export async function createProduct(payload) {
+  const res = await fetch(buildUrl("/products"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  if (!res.ok) {
+    const details = await res.json().catch(() => ({}));
+    throw new Error(details.error || "No se pudo crear el producto");
+  }
+
+  return res.json();
+}

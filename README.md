@@ -5,6 +5,7 @@ Aplicación web progresiva que implementa el patrón Master–Detail consumiendo
 - **Vista Principal:** landing con CTA hacia el catálogo.
 - **Vista Maestro:** listado dinámico de productos leído desde la base.
 - **Vista Detalle:** ficha completa del elemento seleccionado (puede cargar por id directo).
+- **Formulario de alta:** desde la propia PWA puedes crear productos; se insertan en PostgreSQL vía API.
 
 ## Requisitos previos
 
@@ -73,6 +74,7 @@ La app queda lista como PWA: incluye Manifest, Service Worker (via `vite-plugin-
 - `GET /api/health`
 - `GET /api/products`
 - `GET /api/products/:id`
+- `POST /api/products` (body JSON: `name`, `category`, `price`, `stock`, `description?`)
 
 Todos devuelven/consumen JSON. El esquema maestro/detalle reside completamente en la base PostgreSQL.
 

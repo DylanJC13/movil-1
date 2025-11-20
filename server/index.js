@@ -75,6 +75,31 @@ api.get("/products/:id", async (req, res) => {
   }
 });
 
+api.post("/products", async (req, res) => {
+  try {
+    const { name, category, price, stock, description } = req.body || {};
+    if (!name || !category || price === undefined || stock === undefined) {
+      return res.status(400).json({ error: "name, category, price y stock son obligatorios" });
+    }
+
+    const parsedPrice = Number(price);
+    const parsedStock = Number.isInteger(stock) ? stock : Number(stock);
+
+    if (Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
+      return res.status(400).json({ error: "price y stock deben ser numéricos" });
+    }
+
+    const { rows } = await pool.query(
+      "INSERT INTO products (name, category, price, stock, description) VALUES ($1,$2,$3,$4,$5) RETURNING id, name, category, price, stock, description",
+      [name, category, parsedPrice, parsedStock, description || ""]
+    );
+
+    res.status(201).json(normalizeProduct(rows[0]));
+  } catch (err) {
+    res.status(500).json({ error: "No se pudo crear el producto", detail: err.message });
+  }
+});
+
 app.use("/api", api);
 
 if (process.env.NODE_ENV === "production") {
