@@ -1,4 +1,5 @@
 require("dotenv").config();
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { Pool } = require("pg");
@@ -35,13 +36,15 @@ const pool = new Pool({
 app.use(cors());
 app.use(express.json());
 
+const api = express.Router();
+
 const normalizeProduct = (row) => ({
   ...row,
   price: row.price !== null ? Number(row.price) : null,
   stock: row.stock !== null ? Number(row.stock) : 0
 });
 
-app.get("/health", async (_req, res) => {
+api.get("/health", async (_req, res) => {
   try {
     await pool.query("SELECT 1");
     res.json({ status: "ok" });
@@ -50,7 +53,7 @@ app.get("/health", async (_req, res) => {
   }
 });
 
-app.get("/products", async (_req, res) => {
+api.get("/products", async (_req, res) => {
   try {
     const { rows } = await pool.query("SELECT id, name, category, price, stock, description FROM products ORDER BY id DESC");
     res.json(rows.map(normalizeProduct));
@@ -59,7 +62,7 @@ app.get("/products", async (_req, res) => {
   }
 });
 
-app.get("/products/:id", async (req, res) => {
+api.get("/products/:id", async (req, res) => {
   try {
     const { rows } = await pool.query(
       "SELECT id, name, category, price, stock, description FROM products WHERE id = $1 LIMIT 1",
@@ -71,6 +74,16 @@ app.get("/products/:id", async (req, res) => {
     res.status(500).json({ error: "No se pudo obtener el producto", detail: err.message });
   }
 });
+
+app.use("/api", api);
+
+if (process.env.NODE_ENV === "production") {
+  const clientDist = path.join(__dirname, "..", "client", "dist");
+  app.use(express.static(clientDist));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(clientDist, "index.html"));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`API corriendo en http://localhost:${PORT}`);

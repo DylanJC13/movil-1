@@ -1,83 +1,94 @@
-# App Master–Detail (React Native + Expo)
+# Master–Detail PWA (React + Vite + Express)
 
-Aplicación móvil multiplataforma que implementa navegación Master–Detail con tres pantallas y datos servidos desde PostgreSQL (sin información quemada):
+Aplicación web progresiva que implementa el patrón Master–Detail consumiendo datos en tiempo real desde PostgreSQL (DigitalOcean). La UI está construida con React/Vite y se sirve como PWA; el backend Express expone la API y también entrega los archivos estáticos listos para subir a App Platform.
 
-- **Vista Principal:** entrada con título y botón para ir al Maestro.
-- **Vista Maestro:** lista dinámica de productos traída vía API REST.
-- **Vista Detalle:** ficha del producto seleccionado (consulta por id si no recibe el objeto).
+- **Vista Principal:** landing con CTA hacia el catálogo.
+- **Vista Maestro:** listado dinámico de productos leído desde la base.
+- **Vista Detalle:** ficha completa del elemento seleccionado (puede cargar por id directo).
 
 ## Requisitos previos
 
 - Node.js 18+ y npm.
-- Expo CLI (`npm install -g expo-cli`, opcional pero útil).
+- Base PostgreSQL accesible (incluye script `npm run db:init` para crear tabla `products` + seed).
 
-## Ejecutar la app
+## Configuración inicial
 
-```bash
-npm install
-# Inicia el servidor y elige plataforma:
-npm run start        # abre menú Expo
-npm run android      # lanza app en emulador/dispositivo Android
-npm run ios          # iOS (requiere Mac + simulador)
-npm run web          # versión web
-```
-
-### Configurar base de datos (PostgreSQL)
-
-1. Copia el entorno y rellena la URL de la base (no subas tu `.env` al repo):
+1. Variables de entorno (servidor):
    ```bash
    cp .env.example .env
-   # ajusta DB_PASSWORD con tu contraseña real (el resto ya está en el ejemplo)
+   # Ajusta DB_PASSWORD (y demás campos si tu instancia difiere)
    ```
-2. Crear tabla y datos seed:
+2. Dependencias:
+   ```bash
+   npm install              # instala servidor y, vía postinstall, /client
+   ```
+3. Base de datos (crea tabla + datos demo):
    ```bash
    npm run db:init
    ```
-3. Levantar la API REST (Express + pg):
-   ```bash
-   npm run api   # http://localhost:4000
-   ```
-4. En `.env`, ajusta `EXPO_PUBLIC_API_URL` para que el cliente acceda a la API:
-   - Emulador: `http://localhost:4000`
-   - Dispositivo real en la misma red: `http://<TU_IP_LOCAL>:4000`
 
-### PWA lista para usar
+## Desarrollo local
 
-- La carpeta `public/` incluye `manifest.json`, icono y favicon.
-- Corre `npm run web` y abre `http://localhost:8081` (Expo Web). En el navegador verás el prompt “Install App”/“Add to Home Screen” (según navegador).
-- Para generar estático listo para deploy, ejecuta:  
-  ```bash
-  npm run web:build   # genera web-build con manifest y service worker
-  ```
+```bash
+npm run dev
+```
+
+El comando levanta:
+- API Express en `http://localhost:4000` (`/api/products`, `/api/products/:id`, `/api/health`).
+- Vite dev server en `http://localhost:5173` con proxy a `/api`.
+
+## Build y ejecución (producción)
+
+```bash
+# Genera la PWA en client/dist
+npm run build
+
+# Levanta el servidor Express sirviendo API + estáticos
+npm start
+```
+
+En producción el backend devuelve automáticamente los archivos compilados (ruta `/`), manteniendo los endpoints REST bajo `/api`.
+
+## Despliegue en DigitalOcean App Platform
+
+1. **Repositorio:** apunta DO App Platform a este repo.
+2. **Build Command:** `npm run build`
+3. **Run Command:** `npm start`
+4. **Variables/Secrets:** agrega las claves del `.env` (PORT opcional, DB_HOST/DB_PORT/DB_DATABASE/DB_USER/DB_PASSWORD/DB_SSL).
+5. **Base de datos:** el mismo servicio Node maneja el API y sirve la PWA, por lo que solo necesitas un componente (Web Service) en App Platform.
+
+La app queda lista como PWA: incluye Manifest, Service Worker (via `vite-plugin-pwa`) e iconos, por lo que navegadores compatibles mostrarán “Install App / Add to Home Screen”.
 
 ## Estructura relevante
 
-- `App.js`: configura el Stack Navigator y rutas.
-- `src/screens/MainPage.js`: Vista Principal.
-- `src/screens/MasterPage.js`: Vista Maestro que consume `/products` desde la API.
-- `src/screens/DetailPage.js`: Vista Detalle; si no recibe el objeto, consulta `/products/:id`.
-- `server/index.js`: API REST (Express + PostgreSQL).
-- `scripts/init-db.js`: crea tabla `products` y seed inicial.
-- `.env.example`: plantilla de variables (`DATABASE_URL`, `EXPO_PUBLIC_API_URL`).
+- `server/index.js`: API Express + static serving.
+- `scripts/init-db.js`: crea tabla `products` (id, name, category, price, stock, description) y seed inicial cuando está vacía.
+- `client/`: Vite + React + `vite-plugin-pwa`.
+  - `client/src/pages/`: Main, Master y Detail.
+  - `client/src/services/api.js`: cliente fetch configurable (`VITE_API_URL`, o `/api` por defecto).
+  - `client/vite.config.js`: configuración PWA + proxy en dev.
 
-## Explicación del patrón Master–Detail
+## Endpoints
 
-Separa la experiencia en dos zonas: **Maestro** (lista o panel) y **Detalle** (contenido del elemento seleccionado). El usuario explora en el Maestro y, al elegir un ítem, se muestra su información completa en el Detalle. En móviles suele representarse como navegación jerárquica (Stack: Lista → Detalle). En tablets/escritorio puede verse en paralelo (split view). Beneficios: claridad de jerarquía, reutilización de la lista, y navegación consistente.
+- `GET /api/health`
+- `GET /api/products`
+- `GET /api/products/:id`
 
-## Ejemplos reales que usan Master–Detail
-
-- Aplicaciones de correo (Gmail, Outlook): lista de correos → detalle del correo.
-- Apps de notas (Evernote, Apple Notes): lista de notas → nota seleccionada.
-- Apps de tareas (Microsoft To Do, Todoist): lista de tareas → detalle/edición de tarea.
-- Apps de tienda (Amazon, Mercado Libre): listado de productos → ficha de producto.
+Todos devuelven/consumen JSON. El esquema maestro/detalle reside completamente en la base PostgreSQL.
 
 ## Preguntas frecuentes
 
-- **¿Qué clase o mecanismo se usa para acceder a funcionalidades nativas como GPS?**  
-  En React Native se usan **Native Modules** expuestos a JavaScript. En Expo, la opción directa es el paquete `expo-location` (API `Location`). En un proyecto bare se usa `@react-native-community/geolocation` o se implementa un módulo nativo propio expuesto con `NativeModules`.
+- **¿Qué es el patrón Master–Detail?**  
+  Divide la experiencia en un panel maestro (lista) y un panel de detalle (contenido del elemento elegido). Facilita navegar colecciones grandes y mantiene contexto.
 
-- **¿Qué componente usar si necesito ejecutar lógica nativa sin compartir código?**  
-  Crea un **módulo nativo** (Android: clase Java/Kotlin con anotaciones ReactPackage; iOS: Objective-C/Swift con `RCT_EXPORT_MODULE`). Luego se expone vía `NativeModules` o un TurboModule para consumirlo desde JS.
+- **Ejemplos reales que lo usan:**  
+  Gmail/Outlook (carpetas → correo), Apple Notes/Evernote (lista → nota), Amazon/Mercado Libre (catálogo → ficha), Microsoft To Do/Todoist (listas → tarea).
 
-- **¿Cuántas tablas mínimas se requieren en un proceso de facturación para implementar maestro–detalle?**  
-  Mínimo dos: una tabla **Factura (Maestra)** con el encabezado (cliente, fecha, total, estado) y una tabla **Detalle de líneas** con cada concepto (producto/servicio, cantidad, precio, impuestos) relacionada por la clave de la factura. Opcionalmente se añade una tabla de **Clientes** y de **Productos**, pero el esquema maestro–detalle se cumple con esas dos.
+- **¿Cómo acceder a funcionalidades nativas como GPS?**  
+  En entornos web/PWA se usan APIs del navegador (`navigator.geolocation`). Si migras a una app nativa (React Native/MAUI/etc.) necesitas exponer módulos nativos (Swift/Kotlin) o usar plugins como `expo-location`.
+
+- **¿Qué componente usar para lógica nativa sin compartir código?**  
+  En una app nativa se crea un **Native Module** (Android: `ReactPackage`, iOS: `RCT_EXPORT_MODULE`). En web puro tendrías que exponer endpoints o usar Web APIs específicas.
+
+- **¿Cuántas tablas mínimas requiere un proceso maestro–detalle de facturación?**  
+  Dos: tabla `facturas` (maestro) y tabla `lineas_factura` (detalle) relacionadas por la clave de la factura. Desde allí puedes sumar catálogos (clientes/productos) según la necesidad.
